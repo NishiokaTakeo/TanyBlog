@@ -22,6 +22,7 @@
 	<!--共通ヘッダー-->
 	<header style="text-align:center;">
 	<h1><a id="logo" href="/" title="bechka">たにぃブログ</a></h1>
+        <div>注意。利用出来るブログはWPのみ。とりあえずこれで様子見て必要ならMT作ります。</div>
 <!--	
 	<nav>
 		<ul>
@@ -43,59 +44,126 @@
 
 var CSBlog = {
 
-	check:function(){
-	},
-  create:function(){
+    check:function(){
+        
+        var patterm = "[a-z][a-z0-9]+\.[a-z]{3}+";
+        
+        //ドメイン
+        var domain = $('input[name="domain"]').val();
+        if( domain.match(patterm) == false){
+            printMessage("ドメインが未入力でふ") ;
+            return false ;
+        }
+        
+        //blog
+        if( $('input[name="blog_type"]:checked').val() == null
+            || $('input[name="blog_type"]:checked').val() == ""){
+            printMessage("ブログタイプが未選択でふ") ;
+            return false ;            
+        }
+        
+        return true;
+    },
+    
+    create:function(){
+                
+        //チェック
+        if( this.check() == false ){
+            return ;
+        }
+        
+        //通信
+	
+        //成功したことにする。
+        this.create_success();
+    } ,
   
-  
-	  this.create_success();
-  } ,
-  
-  create_success:function(){
-  
-  
-  
-  
-  },
-  
-  error:function(){
-  
-  } ,
+    create_success:function(){
+        var id ="4";
+        if( id > 0) {
+            addToList(id);
 
-  addList:function(){
+            printMessage("成功しました。") ;
+        }else{
+            printMessage("失敗しました。問い合わせ頼む") ;
+        }
+    },
   
-  } ,
+    error:function(){
+
+    } ,
+    
+
+    addToList:function(id){
+        
+        var domain = $('input[name="domain"]').val();
+        var type = $('input[name="blog_type"]:checked').val();
+        
+        var addHtml = '<li id="list'+id+'">'+domain+'|<a href="./">管理</a>|<a href="">削除</a></li>';
+        
+        $("#domain_list").append(addHtml);        
+        
+        return true;
+    } ,
+  
+  
+    printMessage:function(){
+
+	//存在確認
+	var element = document.getElementById("message");
+	if( element != null){return;}
+
+	$("body").append('<div id="message"><div class="message_title">メッセージ</div><div class="message_body">'+message+'</div></div>');
+	$("#message").addClass("message_I");
+	var css="" ;
+	var top = 50 ;
+	//var left = ($("html").width() / 2 ) - ($("body").width() / 2) ;
+	var left =  ($("body").width() / 2) - ($("#message").width() / 2);
+	
+	$("#message").css("top",top) ;
+	$("#message").css("left",left) ;
+
+	$("#message").fadeTo('fast',1);
+
+	//アラーの削除1
+	setTimeout(function(){
+		$("#message").fadeTo('last',0,function(){$("#message").remove();});
+	},1300);        
+    
+    
+    } ,
   
   //list
   ready:function(){
 	
   	
-  },
+  }
 };
 
-</script>
-	<div class="" id="content" style="">
-	  
-	  <form style="border:solid 1px #cccccc;">
-		<label>作成するドメイン</label><input name="domain" type="text" value="" /><br />
-		<label>Wordpress</label><input name="blog_type" type="radio" value="wp" />
-		<label>MovableType</label><input name="blog_type" type="radio" value="mt" />
-		<br />
-		<input name="create" type="submit" value="create" style="width:300px;padding:5px 0;" />
-	  </form>
 
-	  <ul id="domain_list" >
-		<li id="lsit1">sub1.domain|<a href="">管理</a>|<a href="">削除</a></li>
-		<li id="list2">sub2.domain|<a href="">管理</a>|<a href="">削除</a></li>
-		<li id="list3">sub3.domain|<a href="">管理</a>|<a href="">削除</a></li>
-	  </ul>
-	  
-	</div>
+</script>
+    <div class="" id="content" style="">
+
+        <form style="border:solid 1px #cccccc;">
+            <label>作成するドメイン</label><input name="domain" type="text" value="" /><br />
+            <label>Wordpress</label><input name="blog_type" type="radio" value="wp" checked/>
+            <!--<label>MovableType</label><input name="blog_type" type="radio" value="mt" />-->
+            <br />
+            <input name="create" type="submit" value="create" style="width:300px;padding:5px 0;" onclick="CSBlog.create();" />
+        </form>
+
+        <ul id="domain_list" >
+            <li id="lsit1">sub1.domain|<a href="">管理</a>|<a href="">削除</a></li>
+            <li id="list2">sub2.domain|<a href="">管理</a>|<a href="">削除</a></li>
+            <li id="list3">sub3.domain|<a href="">管理</a>|<a href="">削除</a></li>
+        </ul>
+
+    </div>
 
 	<!--共通フッター-->
-	<footer>
-	  © 2012 C-STYLE, LLC. All rights reserved.
-  </footer>
+    <footer>
+    © 2012 C-STYLE, LLC. All rights reserved.
+    </footer>
 </div>
 </body>
 </html>
