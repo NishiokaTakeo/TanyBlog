@@ -8,12 +8,68 @@
 <base href="http://tanyblog.com/home/" />
 <link rel="canonical" href="http://bechka.com/" />
 <script type="text/javascript" src="./js/jquery.js"></script>
+<script type="text/javascript" src="./js/common.js" ></script>
 </head>
 <body>
 <style>
 <!--
+*{padding:0;margin:0;}
+body{
+	width:800px;
+	margin:0 auto;
+}
+h3{
+	margin-top:50px;
+	padding:0.5em 0px;
+	border-bottom: burlywood outset  thick;
+}
+footer{text-align:center;margin:1em;color: lightgrey;}
+#container{
+    padding-top:50px;
+}
+
 #content{
   padding:1em;
+}
+
+.notice{
+	font-size: small;
+	padding:0.5em 0;
+}
+
+ul.bloglist{
+	margin-left:2em;
+	padding-top:1em;
+	list-style:  none;
+}
+ul.bloglist li{
+	margin-top: 3px;
+	padding-left:0.5em;
+	line-height: 1.5em;
+	border-left: chartreuse solid 5px;
+}
+ul.bloglist li div{
+	display:inline-block;
+}
+ul.bloglist li div.name{
+	width:200px;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+#form1{
+
+}
+label{
+	padding-right:0.5em;
+}
+.formline{
+	line-height: 1.5em;
+	display:inline-block;
+	padding:0.5em 0px;
+	padding-right:1em;
+	border-bottom:firebrick solid medium;
+	border-right:firebrick solid medium;
 }
 -->
 </style>
@@ -21,23 +77,8 @@
 
 	<!--共通ヘッダー-->
 	<header style="text-align:center;">
-	<h1><a id="logo" href="./" title="bechka">たにぃブログ</a></h1>
-        <div>注意。利用出来るブログはWPのみ。とりあえずこれで様子見て必要ならMT作ります。</div>
-<!--	
-	<nav>
-		<ul>
-			<li style="" ><a href="/share.pl" >共有する</a></li>
-			<li style="" ><a href="/what_is_share.pl" >Bechkaって？</a></li>
-			<li class="li_search" >
-				<form id="search_form"  method="GET" action="/search.pl">
-
-					<input id="search_text_input"  style="border-radius: 5px 5px 5px 5px;width:200px;" name="キーワード" type="text" value="" />
-					<input id="search_submit_input"  name="search" type="submit" value="検索" />
-				</form>
-			</li>
-		</ul>
-	</nav>
-	-->
+	<h1>@Tany B L O G</h1>
+	<div class="notice"> 利用出来るブログはWPのみ。とりあえずこれでいっとく！？</div>
 </header>
 
 <script>
@@ -45,119 +86,169 @@
 var CSBlog = {
 
     check:function(){
-        
-        var patterm = "[a-z][a-z0-9]+\.[a-z]{3}+";
-        
+
+        var patterm = "[a-z][a-z0-9]+\.([a-z]{3})+";
+
         //ドメイン
         var domain = $('input[name="domain"]').val();
-        if( domain.match(patterm) == false){
-            printMessage("ドメインが未入力でふ") ;
+        if( CSCommon.isNullOrEmpty(domain) || CSCommon.isNullOrEmpty(domain.match(patterm))){
+            CSBlog.printMessage("ドメインが未入力かおかしなフォーマット") ;
             return false ;
         }
-        
+
         //blog
-        if( $('input[name="blog_type"]:checked').val() == null
-            || $('input[name="blog_type"]:checked').val() == ""){
-            printMessage("ブログタイプが未選択でふ") ;
-            return false ;            
+        if( CSCommon.isNullOrEmpty($('input[name="blog_type"]:checked').val())){
+            CSBlog.printMessage("ブログタイプが未選択でふ") ;
+            return false ;
         }
-        
+
         return true;
     },
-    
+
     create:function(){
-                
+
         //チェック
         if( this.check() == false ){
             return ;
         }
-        
-        //通信
-	
-        //成功したことにする。
-        this.create_success();
-    } ,
-  
-    create_success:function(){
-        var id ="4";
-        if( id > 0) {
-            addToList(id);
 
-            printMessage("成功しました。") ;
+        //通信
+	/*
+        $.ajax({
+        type: 'POST',
+        url: '/home/api/create_blog.pl',
+        data: "",
+        success: CSBlog.create_success,
+        dataType: "json"
+        });
+	*/
+
+        //成功したことにする。
+	obj = new Array();
+	obj["id"] = 4;
+	obj["domain"] = $('input[name="domain"]').val();
+	obj["type"] = "WP";
+	//obj["type"] = $('input[name="blog_type"]:checked').val();
+		//
+	//var json = JSON.stringify(obj);
+	CSBlog.create_success(obj,"success",null);
+    } ,
+
+    create_success:function(data, textStatus, jqXHR){
+
+        if( textStatus = "success") {
+            CSBlog.addToList(data);
+
+            CSBlog.printMessage("成功しました。") ;
         }else{
-            printMessage("失敗しました。問い合わせ頼む") ;
+            CSBlog.printMessage("失敗しました。問い合わせ頼む") ;
         }
     },
-  
+
     error:function(){
 
     } ,
-    
 
-    addToList:function(id){
-        
-        var domain = $('input[name="domain"]').val();
-        var type = $('input[name="blog_type"]:checked').val();
-        
-        var addHtml = '<li id="list'+id+'">'+domain+'|<a href="./">管理</a>|<a href="">削除</a></li>';
-        
-        $("#domain_list").append(addHtml);        
-        
+    addToList:function(row){
+
+	var id = row['id'] ;
+	if( CSCommon.isNullOrEmpty(id) == false){
+
+                var domain = row['domain'] ;
+		var type = row['type'] ;
+
+                var addHtml = '<li id="list'+id+'"><div class="name">'+domain+'('+ type + ')</div>  ---> <div class="link"><a href="#a">管理</a></div></li>';
+
+                $("#domain_list").append(addHtml);
+
+	    return true;
+	}else{
+	    return false;
+	}
+    } ,
+
+    printMessage:function(message){
+
+	//存在すれば削除
+	var element = document.getElementById("message");
+	if( element != null){
+            $(element).remove();
+        }
+
+        $("body").append('<div id="message" style="opacity:0;text-align:center;position:absolute; top:0px;left:0px;width:100%;padding:1em 0px;background-color:#7fff00;"><div class="message_body">'+message+'</div></div>');
+
+        $("#message").fadeTo(4000,0.8,function(){
+            $("#message").fadeTo(1500,0,function(){$("#message").remove();});
+        });
+
         return true;
     } ,
-  
-  
-    printMessage:function(){
 
-	//存在確認
-	var element = document.getElementById("message");
-	if( element != null){return;}
-
-	$("body").append('<div id="message"><div class="message_title">メッセージ</div><div class="message_body">'+message+'</div></div>');
-	$("#message").addClass("message_I");
-	var css="" ;
-	var top = 50 ;
-	//var left = ($("html").width() / 2 ) - ($("body").width() / 2) ;
-	var left =  ($("body").width() / 2) - ($("#message").width() / 2);
-	
-	$("#message").css("top",top) ;
-	$("#message").css("left",left) ;
-
-	$("#message").fadeTo('fast',1);
-
-	//アラーの削除1
-	setTimeout(function(){
-		$("#message").fadeTo('last',0,function(){$("#message").remove();});
-	},1300);        
-    
-    
-    } ,
-  
   //list
   ready:function(){
-	
-  	
-  }
+
+        $.ajax({
+        type: 'POST',
+        url: '/home/api/list_blog.pl',
+        success: CSBlog.makeList,
+        dataType: "json"
+        });
+
+        return true;
+  },
+
+
+    makeList:function(data, textStatus, jqXHR){
+
+        if( data.length > 0){
+
+            if( $("#domain_list").has("li")){
+		$("#domain_list").children("li").remove();
+	    }
+
+            for(var i= 0; i < data.length; i++){
+		var row =data[i] ;
+
+		CSBlog.addToList(row);
+
+/*
+                var id = row['id'] ;
+                var domain = row['domain'] ;
+
+                var addHtml = '<li id="list'+id+'"><span>'+domain+'<span> ---> <a href="#">管理</a></li>';
+
+                $("#domain_list").append(addHtml);
+*/
+            }
+        }
+    }
 };
+
+
+$(document).ready(function(){
+    CSBlog.ready();
+});
 
 
 </script>
     <div class="" id="content" style="">
+	<form id="form1">
+		<div class="formline">
+			<label>作成するドメイン</label><input name="domain" type="text" value="" />
+		</div>
+		<div class="formline">
+			<label>ブログの種類</label>wp:<input name="blog_type" type="radio" value="wp" checked/>
+			<!--<label>MovableType</label><input name="blog_type" type="radio" value="mt" />-->
+		</div>
 
-        <form style="border:solid 1px #cccccc;">
-            <label>作成するドメイン</label><input name="domain" type="text" value="" /><br />
-            <label>Wordpress</label><input name="blog_type" type="radio" value="wp" checked/>
-            <!--<label>MovableType</label><input name="blog_type" type="radio" value="mt" />-->
-            <br />
-            <input name="create" type="submit" value="create" style="width:300px;padding:5px 0;" onclick="CSBlog.create();return false;" />
-        </form>
+		<input name="create" type="submit" value="create" style="margin-left:2em;width:100px;padding:5px 0;" onclick="CSBlog.create();return false;" />
 
-        <ul id="domain_list" >
-            <li id="lsit1">sub1.domain|<a href="">管理</a>|<a href="">削除</a></li>
-            <li id="list2">sub2.domain|<a href="">管理</a>|<a href="">削除</a></li>
-            <li id="list3">sub3.domain|<a href="">管理</a>|<a href="">削除</a></li>
-        </ul>
+	</form>
 
+	<div>
+		<h3>君へ送るブログ一覧</h3>
+		<ul id="domain_list" class="bloglist" ></ul>
+	</div>
     </div>
 
 	<!--共通フッター-->
@@ -165,6 +256,10 @@ var CSBlog = {
     © 2012 C-STYLE, LLC. All rights reserved.
     </footer>
 </div>
+
+<script>
+//$("body").append('<div id="message" style="opacity:0;text-align:center;position:absolute; top:0px;left:0px;width:100%;padding:1em 0px;background-color:#cccccc;"><div class="message_body">'+"message"+'</div></div>');
+</script>
 </body>
 </html>
 
