@@ -1,26 +1,38 @@
 #!/usr/bin/perl
+package ListBlog;
 
+BEGIN{
+eval("use lib qw($ENV{DOCUMENT_ROOT}home/lib);");
+};
 use strict;
+use CStyle::Configration;
 use JSON qw/encode_json decode_json/ ;
 
-
+#=================================================
+#-- ここから主処理
+#=================================================
 my $ret =[];
+my $i = 1 ;
 
-my $row = {
-	'id'    => '1',
-	'domain' => 'tany1.com',
-	'type' => 'WP',
-};
+my $dirname = $CStyle::Configration::DOCUMENT_ROOT;
+opendir DH, $dirname ;
+while (my $dir = readdir DH) {
 
-push @$ret ,$row ;
+	next if( $dir eq 'home') ;
+	next if (! -d $dirname.$dir ) ;
+	next if( $dir =~ /(\.){1,2}/ );
 
-$row = {
-	'id'    => '2',
-	'domain' => 'tany2.com',
-	'type' => 'WP',
-};
+	my $row = {
+		'id'    => $i,
+		'domain' => $dir,
+		'type' => 'WP',
+	};
 
-push @$ret ,$row ;
+	$i ++ ;
+
+	push @$ret ,$row ;
+}
+
 my $json = encode_json($ret);
 
 print "Content-Type: text/plain; charset=UTF-8\n" ;
