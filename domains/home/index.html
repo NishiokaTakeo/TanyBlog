@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Cache-Control" content="no-cache">
+<meta http-equiv="Pragma" content="no-cache" >
+<meta http-equiv="Cache-Control" content="no-cache" >
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <title>たにぃブログ</title>
-<base href="http://tanyblog.com/home/" />
-<link rel="canonical" href="http://bechka.com/" />
+<base href="http://csblog.biz/home/" />
+<link rel="canonical" href="http://csblog.biz/" />
 <script type="text/javascript" src="./js/jquery.js"></script>
 <script type="text/javascript" src="./js/common.js" ></script>
 </head>
@@ -87,12 +87,13 @@ var CSBlog = {
 
     check:function(){
 
-        var patterm = "[a-z][a-z0-9]+\.([a-z]{3})+";
-
+	//ドメイン形式を止めて、サブディレクトリ形式に変更
+	var patterm = "^[a-z]([a-z0-9\_\-])+$";
+		
         //ドメイン
         var domain = $('input[name="domain"]').val();
         if( CSCommon.isNullOrEmpty(domain) || CSCommon.isNullOrEmpty(domain.match(patterm))){
-            CSBlog.printMessage("ドメインが未入力かおかしなフォーマット") ;
+            CSBlog.printMessage("「http://xxx.yyy.com/この部分/」を入力して下さい。") ;
             return false ;
         }
 
@@ -107,39 +108,50 @@ var CSBlog = {
 
     create:function(){
 
-        //チェック
-        if( this.check() == false ){
-            return ;
-        }
+	  //チェック
+	  if( this.check() == false ){
+		  return ;
+	  }
 
-        //通信
-	/*
-        $.ajax({
-        type: 'POST',
-        url: '/home/api/create_blog.pl',
-        data: "",
-        success: CSBlog.create_success,
-        dataType: "json"
-        });
-	*/
+	  var domain = $('input[name="domain"]').val();
+	  var type = $('input[name="blog_type"]:checked').val();
 
-        //成功したことにする。
+	  var param = '?domain=' + domain + '&blog_type=' + type;
+	
+	  //通信
+	  $.ajax({
+		type: 'POST',
+		url: '/home/api/create_blog.pl' + param,
+		data: "",
+		success: CSBlog.create_success,
+		dataType: "json"
+	  });
+	  
+	  //ブログ一覧再取得
+	  this.makeList();
+	  return true;
+/*	
+	//成功したことにする。
 	obj = new Array();
 	obj["id"] = 4;
 	obj["domain"] = $('input[name="domain"]').val();
 	obj["type"] = "WP";
-	//obj["type"] = $('input[name="blog_type"]:checked').val();
-		//
-	//var json = JSON.stringify(obj);
 	CSBlog.create_success(obj,"success",null);
+*/	
     } ,
 
     create_success:function(data, textStatus, jqXHR){
 
         if( textStatus = "success") {
-            CSBlog.addToList(data);
-
-            CSBlog.printMessage("成功しました。") ;
+		  //登録失敗
+		  if( CSCommon.isNullOrEmpty(data) ) {
+			CSBlog.printMessage("作成出来ませんでした。問い合わせ頼む") ;
+			return ;
+		  }
+		  
+		  CSBlog.addToList(data);
+		  CSBlog.printMessage("成功しました。") ;
+		  
         }else{
             CSBlog.printMessage("失敗しました。問い合わせ頼む") ;
         }
@@ -151,77 +163,84 @@ var CSBlog = {
 
     addToList:function(row){
 
-	var id = row['id'] ;
-	if( CSCommon.isNullOrEmpty(id) == false){
+	  var id = row['id'] ;
+	  if( CSCommon.isNullOrEmpty(id) == false){
 
-                var domain = row['domain'] ;
+		var domain = row['domain'] ;
 		var type = row['type'] ;
 
-                var addHtml = '<li id="list'+id+'"><div class="name">'+domain+'('+ type + ')</div>  ---> <div class="link"><a href="#a">管理</a></div></li>';
+		var addHtml = '<li id="list'+id+'"><div class="name">'+domain+'('+ type + ')</div>  ---> <div class="link"><a target="_blank" href="../'+domain+'/">管理</a></div></li>';
 
-                $("#domain_list").append(addHtml);
+		$("#domain_list").append(addHtml);
 
-	    return true;
-	}else{
-	    return false;
-	}
+		  return true;
+	  }else{
+		  return false;
+	  }
     } ,
 
     printMessage:function(message){
 
-	//存在すれば削除
-	var element = document.getElementById("message");
-	if( element != null){
-            $(element).remove();
-        }
+	  //存在すれば削除
+	  var element = document.getElementById("message");
+	  if( element != null){
+		$(element).remove();
+	  }
 
-        $("body").append('<div id="message" style="opacity:0;text-align:center;position:absolute; top:0px;left:0px;width:100%;padding:1em 0px;background-color:#7fff00;"><div class="message_body">'+message+'</div></div>');
+	  $("body").append('<div id="message" style="opacity:0;text-align:center;position:absolute; top:0px;left:0px;width:100%;padding:1em 0px;background-color:#7fff00;"><div class="message_body">'+message+'</div></div>');
 
-        $("#message").fadeTo(4000,0.8,function(){
-            $("#message").fadeTo(1500,0,function(){$("#message").remove();});
-        });
+	  $("#message").fadeTo(4000,0.8,function(){
+		  $("#message").fadeTo(1500,0,function(){$("#message").remove();});
+	  });
 
-        return true;
+	  return true;
     } ,
 
-  //list
+  //ページ読み込み時の処理
   ready:function(){
 
+	this.makeList();
+
+	return true;
+  },
+    
+	//ブログ一覧を取得
+	makeList:function(){
+		
         $.ajax({
         type: 'POST',
         url: '/home/api/list_blog.pl',
-        success: CSBlog.makeList,
+        success: CSBlog.makeList2,
         dataType: "json"
-        });
+        });				
+	
+		return true;
+	},
 
-        return true;
-  },
+	makeList2:function(data, textStatus, jqXHR){
 
+	  if( data.length > 0){
 
-    makeList:function(data, textStatus, jqXHR){
+		if( $("#domain_list").has("li")){
+				$("#domain_list").children("li").remove();
+		}
 
-        if( data.length > 0){
+		for(var i= 0; i < data.length; i++){
+				var row =data[i] ;
 
-            if( $("#domain_list").has("li")){
-		$("#domain_list").children("li").remove();
-	    }
+				CSBlog.addToList(row);
 
-            for(var i= 0; i < data.length; i++){
-		var row =data[i] ;
+	/*
+			  var id = row['id'] ;
+			  var domain = row['domain'] ;
 
-		CSBlog.addToList(row);
+			  var addHtml = '<li id="list'+id+'"><span>'+domain+'<span> ---> <a href="#">管理</a></li>';
 
-/*
-                var id = row['id'] ;
-                var domain = row['domain'] ;
-
-                var addHtml = '<li id="list'+id+'"><span>'+domain+'<span> ---> <a href="#">管理</a></li>';
-
-                $("#domain_list").append(addHtml);
-*/
-            }
-        }
-    }
+			  $("#domain_list").append(addHtml);
+	*/
+		  }
+	  }
+  }		
 };
 
 
@@ -234,10 +253,10 @@ $(document).ready(function(){
     <div class="" id="content" style="">
 	<form id="form1">
 		<div class="formline">
-			<label>作成するドメイン</label><input name="domain" type="text" value="" />
+			<label>ブログを配置するディレクトリ名</label><input name="domain" type="text" value="" />
 		</div>
 		<div class="formline">
-			<label>ブログの種類</label>wp:<input name="blog_type" type="radio" value="wp" checked/>
+			<label>ブログの種類</label>wp:<input name="blog_type" type="radio" value="WP" checked/>
 			<!--<label>MovableType</label><input name="blog_type" type="radio" value="mt" />-->
 		</div>
 
